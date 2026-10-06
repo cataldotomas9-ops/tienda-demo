@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verde Vivo | Tienda de plantas (demo)</title>
+<meta name="description" content="Catálogo de ejemplo con filtros y carrito que arma el pedido por WhatsApp.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Figtree:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#F6F7F2;--ink:#17231C;--mut:#5B6B61;--accent:#1E6B45;--accent-ink:#fff;--card:#fff;--line:#DDE3D9;--warn:#B3412B}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 'Figtree',system-ui,sans-serif}
+h1,h2,h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;margin:0;line-height:1.1}
+.wrap{max-width:1080px;margin-inline:auto;padding-inline:20px}
+header{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);z-index:5}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px}
+.logo{font:700 1.4rem 'Bricolage Grotesque',sans-serif}
+button{font:inherit;cursor:pointer;border:0;border-radius:8px}
+.cartbtn{background:var(--accent);color:var(--accent-ink);padding:10px 16px;font-weight:700;min-height:44px}
+.hero{padding-block:36px 18px}
+.hero h1{font-size:clamp(2rem,5vw,3rem)}
+.hero p{color:var(--mut);max-width:48ch}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-block:18px}
+.chip{background:#fff;border:1px solid var(--line);padding:9px 16px;min-height:44px}
+.chip[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;padding-bottom:60px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.pic{aspect-ratio:4/3;display:grid;place-items:center}
+.pic svg{width:46%;height:auto}
+.body{padding:14px;display:grid;gap:6px;flex:1}
+.body small{color:var(--mut)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto}
+.price{font-weight:700;font-size:1.15rem}
+.add{background:var(--ink);color:#fff;padding:9px 14px;min-height:44px}
+.add:disabled{background:var(--line);color:var(--mut);cursor:not-allowed}
+.stock{font-size:.85rem;color:var(--warn)}
+aside{position:fixed;inset:0 0 0 auto;width:min(380px,100%);background:var(--card);border-left:1px solid var(--line);padding:20px;display:none;flex-direction:column;gap:12px;z-index:9;overflow:auto}
+aside.open{display:flex}
+.line{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding-block:10px;border-bottom:1px solid var(--line)}
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:36px;height:36px;background:var(--bg);border:1px solid var(--line)}
+.total{display:flex;justify-content:space-between;font-weight:700;font-size:1.2rem;margin-top:auto}
+.order{background:var(--accent);color:var(--accent-ink);padding:14px;font-weight:700;text-align:center;text-decoration:none;border-radius:8px}
+.close{align-self:flex-end;background:none;font-size:1.4rem;width:44px;height:44px}
+:focus-visible{outline:3px solid #E5A100;outline-offset:2px}
+footer{border-top:1px solid var(--line);padding-block:20px;color:var(--mut);font-size:.9rem}
+</style>
+</head>
+<body>
+<header><div class="wrap bar"><span class="logo">Verde Vivo</span><button class="cartbtn" id="open" aria-label="Abrir carrito">Carrito (<span id="count">0</span>)</button></div></header>
+<main class="wrap">
+  <section class="hero"><h1>Plantas para cada rincón</h1><p>Elegí, armá tu pedido y lo cerramos por WhatsApp. Esto es una demo: los productos y precios son de ejemplo.</p>
+    <div class="chips" id="chips" role="group" aria-label="Filtrar por categoría"></div></section>
+  <section class="grid" id="grid" aria-live="polite"></section>
+</main>
+<footer><div class="wrap">Sitio de ejemplo hecho por Tomás Cataldo.</div></footer>
+
+<aside id="cart" aria-label="Carrito">
+  <button class="close" id="close" aria-label="Cerrar carrito">×</button>
+  <h2>Tu pedido</h2>
+  <div id="lines"></div>
+  <div class="total"><span>Total</span><span id="total">$0</span></div>
+  <a class="order" id="order" href="#" target="_blank" rel="noopener">Enviar pedido por WhatsApp</a>
+</aside>
+
+<script>
+const P=[
+ {id:1,n:'Potus',c:'Interior',p:8500,s:12,col:'#CFE8D5'},{id:2,n:'Monstera',c:'Interior',p:23000,s:5,col:'#BFE0CC'},
+ {id:3,n:'Lavanda',c:'Exterior',p:6500,s:20,col:'#DAD3F0'},{id:4,n:'Suculenta mix',c:'Suculentas',p:5200,s:30,col:'#F2E4C9'},
+ {id:5,n:'Aloe vera',c:'Suculentas',p:7800,s:9,col:'#CDE9D8'},{id:6,n:'Helecho',c:'Interior',p:9800,s:0,col:'#C6E3CF'},
+ {id:7,n:'Romero',c:'Exterior',p:4800,s:25,col:'#D6EAD0'},{id:8,n:'Cactus columnar',c:'Suculentas',p:11500,s:6,col:'#F0E1C4'}];
+const $=s=>document.querySelector(s),fmt=n=>'$'+n.toLocaleString('es-AR');
+let cat='Todas',cart={};try{cart=JSON.parse(localStorage.getItem('vv')||'{}')}catch{}
+const save=()=>{try{localStorage.setItem('vv',JSON.stringify(cart))}catch{}};
+const leaf=c=>`<svg viewBox="0 0 64 64" fill="none" stroke="#1E6B45" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M32 58V30"/><path d="M32 34C16 34 10 22 12 8c16 0 24 8 20 26Z"/><path d="M32 40c12 0 20-8 20-20-14 0-20 6-20 20Z"/></svg>`;
+function renderChips(){const cs=['Todas',...new Set(P.map(x=>x.c))];$('#chips').innerHTML=cs.map(c=>`<button class="chip" aria-pressed="${c===cat}" data-c="${c}">${c}</button>`).join('')}
+function renderGrid(){$('#grid').innerHTML=P.filter(x=>cat==='Todas'||x.c===cat).map(x=>{const q=cart[x.id]||0,left=x.s-q;
+ return `<article class="item"><div class="pic" style="background:${x.col}">${leaf()}</div><div class="body"><h3>${x.n}</h3><small>${x.c}</small>
+ ${x.s===0?'<span class="stock">Sin stock</span>':left<=3?`<span class="stock">Quedan ${left}</span>`:''}
+ <div class="row"><span class="price">${fmt(x.p)}</span><button class="add" data-add="${x.id}" ${left<=0?'disabled':''}>Agregar</button></div></div></article>`}).join('')}
+function renderCart(){const ids=Object.keys(cart).filter(i=>cart[i]>0);let t=0,n=0;
+ $('#lines').innerHTML=ids.length?ids.map(i=>{const x=P.find(p=>p.id==i),q=cart[i];t+=x.p*q;n+=q;return `<div class="line"><b>${x.n}</b><span>${fmt(x.p*q)}</span><div class="qty"><button data-dec="${i}" aria-label="Quitar uno">−</button><span>${q}</span><button data-inc="${i}" aria-label="Sumar uno" ${q>=x.s?'disabled':''}>+</button></div></div>`}).join(''):'<p>Todavía no agregaste nada. Elegí una planta del catálogo.</p>';
+ $('#total').textContent=fmt(t);$('#count').textContent=n;
+ const txt='Hola, quiero hacer este pedido:\n'+ids.map(i=>{const x=P.find(p=>p.id==i);return `- ${cart[i]} x ${x.n} (${fmt(x.p*cart[i])})`}).join('\n')+`\nTotal: ${fmt(t)}`;
+ $('#order').href=ids.length?'https://wa.me/?text='+encodeURIComponent(txt):'#';$('#order').style.opacity=ids.length?1:.5;save()}
+const all=()=>{renderChips();renderGrid();renderCart()};
+document.addEventListener('click',e=>{const t=e.target;
+ if(t.dataset.c){cat=t.dataset.c;renderChips();renderGrid()}
+ if(t.dataset.add||t.dataset.inc){const i=t.dataset.add||t.dataset.inc;cart[i]=(cart[i]||0)+1;all()}
+ if(t.dataset.dec){const i=t.dataset.dec;cart[i]=Math.max(0,(cart[i]||0)-1);all()}});
+$('#open').onclick=()=>$('#cart').classList.add('open');$('#close').onclick=()=>$('#cart').classList.remove('open');
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#cart').classList.remove('open')});
+all();
+</script>
+</body>
+</html>
